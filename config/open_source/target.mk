@@ -100,7 +100,7 @@ HW_DAC_IIR_EQ_PROCESS ?= 0
 
 HW_IIR_EQ_PROCESS ?= 0
 
-HW_DC_FILTER_WITH_IIR ?= 0
+HW_DC_FILTER_WITH_IIR  ?= 0
 
 AUDIO_DRC ?= 0
 
@@ -450,3 +450,6 @@ endif
 #CFLAGS_IMAGE += -u _printf_float -u _scanf_float
 
 #LDFLAGS_IMAGE += --wrap main
+
+# debug print
+$(info "exiting config/open_source/target.mk")

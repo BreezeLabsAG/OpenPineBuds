@@ -36,6 +36,7 @@ RUN apt-get update \
     make \
     tar \
     xxd \
+    ripgrep \
     && git config --global --add safe.directory /src \
     && mkdir -pv /src \
     && curl \
