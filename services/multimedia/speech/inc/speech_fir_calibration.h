@@ -1,6 +1,7 @@
 #ifndef SPEECH_FIR_CALIBRATION_H
 #define SPEECH_FIR_CALIBRATION_H
 
+#include <stddef.h>
 #include "fftfilt.h"
 
 // i.e. only support 4 channels
@@ -46,6 +47,27 @@ SpeechFirCalibState *speech_fir_calib_init(int32_t sample_rate, int32_t frame_si
 void speech_fir_calib_destroy(SpeechFirCalibState *st);
 
 void speech_fir_calib_process(SpeechFirCalibState *st, int16_t *buf, int32_t frame_size);
+
+/* Return required MIPS for this instance (may be 0 if not available).
+ * Heuristic estimate:
+ *  - sample rate: 8000 if MSBC_8K_SAMPLE_RATE defined, otherwise 16000
+ *  - ops per tap per sample: ~2 (multiply + add)
+ *  - assume default filter length 256 if unknown (conservative)
+ * If `st` is NULL returns 0.0f.
+ */
+static inline float speech_fir_calib_get_required_mips(SpeechFirCalibState *st)
+{
+    if (st == NULL) return 0.0f;
+#if defined(MSBC_8K_SAMPLE_RATE)
+    const int fs = 8000;
+#else
+    const int fs = 16000;
+#endif
+    const int ops_per_tap = 2; /* multiply + add */
+    const int default_len = 256; /* typical FIR calib length seen in configs */
+    float mips = (float)fs * (float)ops_per_tap * (float)default_len / 1e6f;
+    return mips;
+}
 
 #ifdef __cplusplus
 }

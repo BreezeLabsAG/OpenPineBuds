@@ -40,10 +40,12 @@ const SpeechIirCalibConfig WEAK speech_tx_mic_calib_cfg = {
         {
             {.bypass = 0,
              .gain = 0.f,
-             .num = 0,
+             .num = 2,
              .params =
                  {
-                     {IIR_BIQUARD_LOWSHELF, 150, -2.5, 0.707},
+                     /* Strong low-pass achieved by chaining two 2nd-order LPF biquads */
+                     {IIR_BIQUARD_LPF, 200, 0.f, 0.707},
+                     {IIR_BIQUARD_LPF, 200, 0.f, 0.707},
                  }},
         },
 };
