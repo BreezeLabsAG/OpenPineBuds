@@ -581,14 +581,20 @@ const SpeechConfig WEAK speech_cfg_default = {
      *please refer to iirfilt.h file Resource consumption: RAM:     None FLASE:
      *None MIPS:    fs = 16kHz, 0.5M/section; Note: None
      ****************************************************************************************************/
+    /* Strong lowpass filter on mic TX path for mSBC duplex.
+     * Three cascaded 2nd-order Butterworth LPF sections at 3400 Hz give a
+     * 6th-order response (~120 dB/decade) that hard-limits the mic signal to
+     * the telephone voice band (300-3400 Hz) before mSBC encoding. */
     .tx_eq =
         {
             .bypass = 0,
             .gain = 0.f,
-            .num = 1,
+            .num = 3,
             .params =
                 {
-                    {IIR_BIQUARD_HPF, {{60, 0, 0.707f}}},
+                    {IIR_BIQUARD_LPF, {{800, 0.f, 0.707f}}},
+                    {IIR_BIQUARD_LPF, {{800, 0.f, 0.707f}}},
+                    {IIR_BIQUARD_LPF, {{800, 0.f, 0.707f}}},
                 },
         },
 #endif
