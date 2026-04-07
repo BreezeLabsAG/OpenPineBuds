@@ -150,80 +150,33 @@ static uint8_t audio_eq_hw_iir_index = 0;
 extern const IIR_CFG_T *const audio_eq_hw_iir_cfg_list[];
 #endif
 
-#define HW_DC_FILTER_WITH_IIR 1
-// sanity check to make sure our filter is applied
-#ifndef HW_DC_FILTER_WITH_IIR
-#error "HW_DC_FILTER_WITH_IIR not defined"
-#endif
-
 #if defined(HW_DC_FILTER_WITH_IIR)
 #include "hw_codec_iir_process.h"
 #include "hw_filter_codec_iir.h"
 
+// 2kHz Butterworth low-pass filter (2nd order, fc=2000Hz, fs=16000Hz, Q=0.707)
+// See DSP_BYPASS.md for context
 hw_filter_codec_iir_cfg
     POSSIBLY_UNUSED
-    adc_iir_cfg = {.bypass = 0,
-                   .iir_device = HW_CODEC_IIR_ADC,
-    
-                  .iir_cfg =
-                  {
-                  .iir_filtes_l = {
-                      .iir_bypass_flag = 0,
-                      .iir_counter = 1,
-                      .iir_coef = {
-                          {
-                              {1.0f, 0.0f, 0.0f},
-                              {0.0f, 0.0f, 0.0f}
-                          },
-                      }
-                  },
-                  .iir_filtes_r = {
-                      .iir_bypass_flag = 0,
-                      .iir_counter = 1,
-                      .iir_coef = {
-                          {
-                              {1.0f, 0.0f, 0.0f},
-                              {0.0f, 0.0f, 0.0f}
-                          },
-                      }
-                  }
-}};
-//         adc_iir_cfg = {.bypass = 0,
-//                        .iir_device = HW_CODEC_IIR_ADC,
-// #if 1
-//                        .iir_cfg =
-//                            {.iir_filtes_l = {.iir_bypass_flag = 0,
-//                                              .iir_counter = 2,
-//                                              .iir_coef =
-//                                                  {
-//                                                      {{0.994406, -1.988812,
-//                                                        0.994406},
-//                                                       {1.000000,
-//                                                        -1.988781, 0.988843}}, // iir_designer('highpass',
-//                                                                               // 0, 20, 0.7,
-//                                                                               // 16000);
-//                                                      {{4.0, 0.0, 0.0}, {1.0, 0.0, 0.0}},
-//                                                  }},
-//                             .iir_filtes_r =
-//                                 {
-//                                     .iir_bypass_flag = 0,
-//                                     .iir_counter = 2,
-//                                     .iir_coef =
-//                                         {
-//                                             {{0.994406, -1.988812, 0.994406},
-//                                              {1.000000, -1.988781, 0.988843}},
-//                                             {{4.0, 0.0, 0.0}, {1.0, 0.0, 0.0}},
-//                                         }}}
-// #else
-//                        .iir_cfg = {.gain0 = 0,
-//                                    .gain1 = 0,
-//                                    .num = 1,
-//                                    .param =
-//                                        {
-//                                            {IIR_TYPE_HIGH_PASS, 0, 20.0, 0.7},
-//                                        }}
-// #endif
-// };
+        adc_iir_cfg = {.bypass = 0,
+                       .iir_device = HW_CODEC_IIR_ADC,
+                       .iir_cfg =
+                           {.iir_filtes_l = {.iir_bypass_flag = 0,
+                                             .iir_counter = 1,
+                                             .iir_coef =
+                                                 {
+                                                     {{0.09763f, 0.19526f, 0.09763f},
+                                                      {1.00000f, -0.94280f, 0.33333f}},
+                                                 }},
+                            .iir_filtes_r =
+                                {
+                                    .iir_bypass_flag = 0,
+                                    .iir_counter = 1,
+                                    .iir_coef =
+                                        {
+                                            {{0.09763f, 0.19526f, 0.09763f},
+                                             {1.00000f, -0.94280f, 0.33333f}},
+                                        }}}};
 
 hw_filter_codec_iir_state *hw_filter_codec_iir_st;
 #endif

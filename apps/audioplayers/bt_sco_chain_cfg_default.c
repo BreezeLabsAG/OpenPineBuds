@@ -585,10 +585,13 @@ const SpeechConfig WEAK speech_cfg_default = {
         {
             .bypass = 0,
             .gain = 0.f,
-            .num = 1,
+            .num = 4,
             .params =
                 {
-                    {IIR_BIQUARD_HPF, {{60, 0, 0.707f}}},
+                    {IIR_BIQUARD_LPF, {{2000, 0, 0.707f}}},
+                    {IIR_BIQUARD_LPF, {{2000, 0, 0.707f}}},
+                    {IIR_BIQUARD_LPF, {{2000, 0, 0.707f}}},
+                    {IIR_BIQUARD_LPF, {{2000, 0, 0.707f}}},
                 },
         },
 #endif

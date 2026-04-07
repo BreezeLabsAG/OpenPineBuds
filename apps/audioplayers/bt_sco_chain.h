@@ -69,6 +69,13 @@ int speech_rx_process(void *pcm_buf, int *pcm_len);
 
 void *speech_get_ext_buff(int size);
 
+/*
+ * DSP bypass mode: toggles between normal processing and a 2kHz LPF-only
+ * mode that preserves quiet sounds like breathing.
+ */
+void speech_dsp_bypass_toggle(void);
+int speech_dsp_bypass_is_enabled(void);
+
 #ifdef __cplusplus
 }
 #endif

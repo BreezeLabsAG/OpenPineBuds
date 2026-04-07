@@ -1052,14 +1052,8 @@ const IIR_CFG_T *const POSSIBLY_UNUSED
         &audio_eq_hw_dac_iir_cfg,
 };
 
-
-// const IIR_CFG_T audio_eq_hw_adc_iir_adc_cfg = audio_eq_sw_iir_cfg;
-const IIR_CFG_T audio_eq_hw_adc_iir_adc_cfg = {.gain0 = 0,
-                                                .gain1 = 0,
-                                                .num = 1,
-                                                .param = {
-                                                    {IIR_TYPE_LOW_PASS, 0.0f, 1000.0f, 0.7f}
-                                                }};
+// hardware adc iir eq
+const IIR_CFG_T audio_eq_hw_adc_iir_adc_cfg = audio_eq_sw_iir_cfg;
 
 const IIR_CFG_T *const POSSIBLY_UNUSED
     audio_eq_hw_adc_iir_cfg_list[EQ_HW_ADC_IIR_LIST_NUM] = {

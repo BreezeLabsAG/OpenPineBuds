@@ -42,6 +42,7 @@ void app_ibrt_keyboard_request_handler(uint16_t rsp_seq, uint8_t *p_buff, uint16
 #define IBRT_ACTION_LOCAL_VOLDN                         0x0d
 #define IBRT_ACTION_ANC_NOTIRY_MASTER_EXCHANGE_COEF     0x0e
 #define IBRT_ACTION_SYNC_WNR                            0x0f
+#define IBRT_ACTION_DSP_BYPASS_TOGGLE                   0x10
 
 
 void app_ibrt_if_start_user_action(uint8_t *p_buff, uint16_t length);
