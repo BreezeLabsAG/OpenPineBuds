@@ -537,6 +537,26 @@ void media_runtime_audio_prompt_update(uint16_t id, uint8_t **ptr,
     g_app_audio_data = (U8 *)SOUND_MUTE;
     g_app_audio_length = SOUND_MUTE_len;
     break;
+  case AUDIO_ID_BT_BYPASS_ON:
+    g_app_audio_data = (U8 *)SOUND_BYPASS_ON;
+    g_app_audio_length = SOUND_BYPASS_ON_len;
+    break;
+  case AUDIO_ID_BT_BYPASS_OFF:
+    g_app_audio_data = (U8 *)SOUND_BYPASS_OFF;
+    g_app_audio_length = SOUND_BYPASS_OFF_len;
+    break;
+  case AUDIO_ID_BT_MODE_NORMAL:
+    g_app_audio_data = (U8 *)SOUND_MODE_NORMAL;
+    g_app_audio_length = SOUND_MODE_NORMAL_len;
+    break;
+  case AUDIO_ID_BT_MODE_BREATHING:
+    g_app_audio_data = (U8 *)SOUND_MODE_BREATHING;
+    g_app_audio_length = SOUND_MODE_BREATHING_len;
+    break;
+  case AUDIO_ID_BT_MODE_PASSTHROUGH:
+    g_app_audio_data = (U8 *)SOUND_MODE_PASSTHROUGH;
+    g_app_audio_length = SOUND_MODE_PASSTHROUGH_len;
+    break;
   case AUD_ID_NUM_0:
     g_app_audio_data = (U8 *)SOUND_ZERO;
     g_app_audio_length = SOUND_ZERO_len;

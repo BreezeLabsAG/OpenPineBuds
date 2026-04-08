@@ -85,6 +85,17 @@ extern const unsigned SOUND_GSOUND_MIC_CLOSE_len;
 extern const unsigned DUDU_len;
 extern const unsigned SOUND_GSOUND_NC_len;
 
+extern const uint8_t SOUND_BYPASS_ON[];
+extern const unsigned SOUND_BYPASS_ON_len;
+extern const uint8_t SOUND_BYPASS_OFF[];
+extern const unsigned SOUND_BYPASS_OFF_len;
+extern const uint8_t SOUND_MODE_NORMAL[];
+extern const unsigned SOUND_MODE_NORMAL_len;
+extern const uint8_t SOUND_MODE_BREATHING[];
+extern const unsigned SOUND_MODE_BREATHING_len;
+extern const uint8_t SOUND_MODE_PASSTHROUGH[];
+extern const unsigned SOUND_MODE_PASSTHROUGH_len;
+
 #ifdef __INTERACTION__
 extern const uint8_t SOUND_FINDME[];
 extern unsigned int SOUND_FINDME_len;

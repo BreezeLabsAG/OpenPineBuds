@@ -83,8 +83,8 @@ extern struct BT_DEVICE_T app_bt_device;
  * Hold       : Previous track
  * Triple tap : Volume Up
  * Quad   tap : Volume Down
-
-
+ *
+ * Both pods active, Quad tap: DSP bypass toggle (2kHz LPF on/off)
 
  * We use app_ibrt_if_start_user_action for handling actions, as this will apply
  locally if we are link master
@@ -121,6 +121,11 @@ void send_prev_track(void) {
 
 void send_enable_disable_anc(void) {
   uint8_t action[] = {IBRT_ACTION_ANC_NOTIRY_MASTER_EXCHANGE_COEF};
+  app_ibrt_if_start_user_action(action, sizeof(action));
+}
+
+void send_dsp_bypass_toggle(void) {
+  uint8_t action[] = {IBRT_ACTION_DSP_BYPASS_TOGGLE};
   app_ibrt_if_start_user_action(action, sizeof(action));
 }
 
@@ -189,12 +194,8 @@ void app_key_triple_tap(APP_KEY_STATUS *status, void *param) {
 }
 void app_key_quad_tap(APP_KEY_STATUS *status, void *param) {
   TRACE(2, "%s event %d", __func__, status->event);
-
-  if (!app_tws_ibrt_tws_link_connected()) {
-    // No other bud paired
-    TRACE(0, "Handling %s in single bud mode", __func__);
-    send_vol_down();
-  }
+  TRACE(0, "Handling %s: DSP bypass toggle", __func__);
+  send_dsp_bypass_toggle();
 }
 
 void app_key_long_press_down(APP_KEY_STATUS *status, void *param) {

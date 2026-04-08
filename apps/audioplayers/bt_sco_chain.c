@@ -84,6 +84,8 @@ SPEAKER_WEIGHTING_FILTER_SUPPRESS | Default EQ                       | 0.5     \
 #include "app_anc.h"
 #endif
 #include "app_utils.h"
+#include "app_status_ind.h"
+#include "apps.h"
 
 #if defined(SCO_CP_ACCEL)
 #include "bt_sco_chain_cp.h"
@@ -132,6 +134,52 @@ static uint32_t tx_end_ticks = 0;
 
 extern const SpeechConfig speech_cfg_default;
 static SpeechConfig *speech_cfg = NULL;
+
+// DSP mode: 0=normal, 1=breathing, 2=passthrough
+#define DSP_MODE_NORMAL      0
+#define DSP_MODE_BREATHING   1
+#define DSP_MODE_PASSTHROUGH 2
+#define DSP_MODE_COUNT       3
+static int dsp_mode = DSP_MODE_NORMAL;
+
+#if defined(SPEECH_TX_EQ)
+// Mode 0 - Normal: EQ bypassed (stock voice-optimized processing)
+static const EqConfig dsp_eq_normal = {
+    .bypass = 1,
+    .gain = 0.f,
+    .num = 0,
+    .params = {},
+};
+// Mode 1 - Breathing: bandpass 250-2000 Hz + boost 700-1500 Hz sweet spot
+//   HPF at 250 Hz (cuts wind noise, speech F0, footsteps)
+//   LPF at 2000 Hz x2 (steep cut of sibilants/HF noise)
+//   Peaking EQ +6dB at 1000 Hz Q=0.8 (boost breathing peak zone 700-1500 Hz)
+static const EqConfig dsp_eq_breathing = {
+    .bypass = 0,
+    .gain = 0.f,
+    .num = 4,
+    .params =
+        {
+            {IIR_BIQUARD_HPF, {{250, 0, 0.707f}}},
+            {IIR_BIQUARD_LPF, {{2000, 0, 0.707f}}},
+            {IIR_BIQUARD_LPF, {{2000, 0, 0.707f}}},
+            {IIR_BIQUARD_PEAKINGEQ, {{1000, 6, 0.8f}}},
+        },
+};
+// Mode 2 - Passthrough: EQ bypassed, raw audio (DC filter still active)
+static const EqConfig dsp_eq_passthrough = {
+    .bypass = 1,
+    .gain = 0.f,
+    .num = 0,
+    .params = {},
+};
+
+static const EqConfig *dsp_eq_configs[DSP_MODE_COUNT] = {
+    &dsp_eq_normal,
+    &dsp_eq_breathing,
+    &dsp_eq_passthrough,
+};
+#endif
 
 FrameResizeState *speech_frame_resize_st = NULL;
 
@@ -1356,7 +1404,9 @@ void _speech_tx_process_pre(short *pcm_buf, short *ref_buf, int *_pcm_len) {
 #endif
 
 #if defined(SPEECH_TX_COMPEXP)
-  compexp_process(speech_tx_compexp_st, pcm_buf, pcm_len);
+  if (dsp_mode == DSP_MODE_NORMAL) {
+    compexp_process(speech_tx_compexp_st, pcm_buf, pcm_len);
+  }
 #endif
 
 #if defined(SPEECH_TX_AGC)
@@ -1526,4 +1576,27 @@ int speech_rx_process(void *pcm_buf, int *pcm_len) {
   }
 
   return 0;
+}
+
+void speech_dsp_bypass_toggle(void) {
+  dsp_mode = (dsp_mode + 1) % DSP_MODE_COUNT;
+  TRACE(1, "[DSP_BYPASS] mode changed to %d", dsp_mode);
+
+#if defined(SPEECH_TX_EQ)
+  if (speech_tx_eq_st != NULL) {
+    eq_set_config(speech_tx_eq_st, dsp_eq_configs[dsp_mode]);
+    TRACE(1, "[DSP_BYPASS] EQ config swapped");
+  }
+#endif
+
+  static const APP_STATUS_INDICATION_T mode_indications[DSP_MODE_COUNT] = {
+      APP_STATUS_INDICATION_MODE_NORMAL,
+      APP_STATUS_INDICATION_MODE_BREATHING,
+      APP_STATUS_INDICATION_MODE_PASSTHROUGH,
+  };
+  app_voice_report(mode_indications[dsp_mode], 0);
+}
+
+int speech_dsp_bypass_is_enabled(void) {
+  return dsp_mode != DSP_MODE_NORMAL;
 }

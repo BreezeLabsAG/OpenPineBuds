@@ -16,6 +16,7 @@
 #include "app_ibrt_keyboard.h"
 #include "anc_wnr.h"
 #include "app_anc.h"
+#include "bt_sco_chain.h"
 #include "app_bt.h"
 #include "app_factory_bt.h"
 #include "app_ibrt_if.h"
@@ -355,6 +356,9 @@ void app_ibrt_ui_perform_user_action(uint8_t *p_buff, uint16_t length) {
     break;
   case IBRT_ACTION_ANC_NOTIRY_MASTER_EXCHANGE_COEF:
     app_anc_key(NULL, NULL);
+    break;
+  case IBRT_ACTION_DSP_BYPASS_TOGGLE:
+    speech_dsp_bypass_toggle();
     break;
   default:
     TRACE(2, "%s unknown user action %d\n", __func__, p_buff[0]);

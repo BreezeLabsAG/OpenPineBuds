@@ -413,6 +413,21 @@ int app_voice_report_handler(APP_STATUS_INDICATION_T status, uint8_t device_id,
     case APP_STATUS_INDICATION_DU:
       id = AUDIO_ID_BT_DU;
       break;
+    case APP_STATUS_INDICATION_BYPASS_ON:
+      id = AUDIO_ID_BT_BYPASS_ON;
+      break;
+    case APP_STATUS_INDICATION_BYPASS_OFF:
+      id = AUDIO_ID_BT_BYPASS_OFF;
+      break;
+    case APP_STATUS_INDICATION_MODE_NORMAL:
+      id = AUDIO_ID_BT_MODE_NORMAL;
+      break;
+    case APP_STATUS_INDICATION_MODE_BREATHING:
+      id = AUDIO_ID_BT_MODE_BREATHING;
+      break;
+    case APP_STATUS_INDICATION_MODE_PASSTHROUGH:
+      id = AUDIO_ID_BT_MODE_PASSTHROUGH;
+      break;
     default:
       break;
     }
