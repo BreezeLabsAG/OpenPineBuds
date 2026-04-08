@@ -206,7 +206,16 @@ Voice prompts "bypass on" / "bypass off" played through the earbud speaker when 
 3. Quad-tap again → should hear audio feedback and see full bandwidth
 
 ### Result
-- **PARTIAL** — toggle produces a double-beep sound instead of spoken "bypass on"/"bypass off". The TTS opus files are in the build but the media player may be falling back to a default tone. The beep is sufficient as acoustic feedback for now.
+- **PARTIAL** — toggle produces a double-beep sound instead of spoken text. The beep provides sufficient acoustic feedback for now.
+- Voice prompt investigation:
+  - TTS opus files are generated, converted to valid SBC by build system (verified: `0x9c` sync byte, correct lengths)
+  - Symbols correctly linked (`arm-none-eabi-nm` confirms `SOUND_MODE_NORMAL` etc. in `built-in.a`)
+  - Enum IDs, status indications, and switch cases all correctly wired (same pattern as `SOUND_CONNECTED`)
+  - `app_voice_report()` from IBRT keyboard handler: plays double-beep, not spoken text
+  - `media_PlayAudio_standalone_locally()` from IBRT handler: same double-beep
+  - `app_voice_report()` from key handler directly (bypassing IBRT): **spoken text works!** But calling `speech_dsp_bypass_toggle()` directly from key handler (before IBRT is ready) freezes BT connection
+  - Root cause likely: voice prompts cannot interrupt/replace audio during active BT states when called from IBRT context. The double-beep is a fallback notification tone.
+  - **Parked** — the double-beep is functional feedback. Spoken prompts would need deeper investigation into the audio manager's priority/scheduling system.
 
 ---
 

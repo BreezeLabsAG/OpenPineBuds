@@ -1578,7 +1578,7 @@ int speech_rx_process(void *pcm_buf, int *pcm_len) {
   return 0;
 }
 
-void speech_dsp_bypass_toggle(void) {
+int speech_dsp_bypass_toggle(void) {
   dsp_mode = (dsp_mode + 1) % DSP_MODE_COUNT;
   TRACE(1, "[DSP_BYPASS] mode changed to %d", dsp_mode);
 
@@ -1595,6 +1595,8 @@ void speech_dsp_bypass_toggle(void) {
       APP_STATUS_INDICATION_MODE_PASSTHROUGH,
   };
   app_voice_report(mode_indications[dsp_mode], 0);
+
+  return dsp_mode;
 }
 
 int speech_dsp_bypass_is_enabled(void) {
