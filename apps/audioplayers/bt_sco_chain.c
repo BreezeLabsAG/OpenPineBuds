@@ -143,27 +143,25 @@ static SpeechConfig *speech_cfg = NULL;
 static int dsp_mode = DSP_MODE_NORMAL;
 
 #if defined(SPEECH_TX_EQ)
-// Mode 0 - Normal: EQ bypassed (stock voice-optimized processing)
+// Mode 0 - Normal: stock voice-optimized EQ (HPF 60Hz removes DC/rumble)
 static const EqConfig dsp_eq_normal = {
-    .bypass = 1,
+    .bypass = 0,
     .gain = 0.f,
-    .num = 0,
-    .params = {},
+    .num = 1,
+    .params =
+        {
+            {IIR_BIQUARD_HPF, {{60, 0, 0.707f}}},
+        },
 };
-// Mode 1 - Breathing: bandpass 250-2000 Hz + boost 700-1500 Hz sweet spot
-//   HPF at 250 Hz (cuts wind noise, speech F0, footsteps)
-//   LPF at 2000 Hz x2 (steep cut of sibilants/HF noise)
-//   Peaking EQ +6dB at 1000 Hz Q=0.8 (boost breathing peak zone 700-1500 Hz)
+// Mode 1 - Breathing: boost breathing zone, keep full bandwidth
+//   Peaking EQ +8dB at 1500 Hz Q=0.7 (breathing peak zone, above wind noise)
 static const EqConfig dsp_eq_breathing = {
     .bypass = 0,
     .gain = 0.f,
-    .num = 4,
+    .num = 1,
     .params =
         {
-            {IIR_BIQUARD_HPF, {{250, 0, 0.707f}}},
-            {IIR_BIQUARD_LPF, {{2000, 0, 0.707f}}},
-            {IIR_BIQUARD_LPF, {{2000, 0, 0.707f}}},
-            {IIR_BIQUARD_PEAKINGEQ, {{1000, 6, 0.8f}}},
+            {IIR_BIQUARD_PEAKINGEQ, {{1500, 8, 0.7f}}},
         },
 };
 // Mode 2 - Passthrough: EQ bypassed, raw audio (DC filter still active)

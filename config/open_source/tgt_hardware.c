@@ -186,10 +186,18 @@ const struct CODEC_DAC_VOL_T codec_dac_vol[TGT_VOLUME_LEVEL_QTY] = {
 
 const struct AUD_IO_PATH_CFG_T
     cfg_audio_input_path_cfg[CFG_HW_AUD_INPUT_PATH_NUM] = {
+#if defined(SPEECH_TX_AEC_CODEC_REF)
+        // Codec ref adds DAC loopback as extra capture channel
+        {
+            AUD_INPUT_PATH_MAINMIC,
+            CFG_HW_AUD_INPUT_PATH_MAINMIC_DEV | AUD_CHANNEL_MAP_CH4,
+        },
+#else
         {
             AUD_INPUT_PATH_MAINMIC,
             CFG_HW_AUD_INPUT_PATH_MAINMIC_DEV,
         },
+#endif
         {
             AUD_INPUT_PATH_LINEIN,
             CFG_HW_AUD_INPUT_PATH_MAINMIC_DEV,

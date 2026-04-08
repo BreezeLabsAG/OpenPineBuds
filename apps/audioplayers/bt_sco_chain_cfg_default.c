@@ -172,12 +172,12 @@ const SpeechConfig WEAK speech_cfg_default = {
     .tx_aec2float =
         {
             .bypass = 0,
-            .hpf_enabled = false,
-            .af_enabled = false,
+            .hpf_enabled = true,
+            .af_enabled = true,
             .nlp_enabled = true,
             .clip_enabled = false,
             .stsupp_enabled = false,
-            .ns_enabled = true,
+            .ns_enabled = false,
             .cng_enabled = false,
             .blocks = 1,
             .delay = 70,
@@ -583,10 +583,13 @@ const SpeechConfig WEAK speech_cfg_default = {
      ****************************************************************************************************/
     .tx_eq =
         {
-            .bypass = 1,
+            .bypass = 0,
             .gain = 0.f,
-            .num = 0,
-            .params = {},
+            .num = 1,
+            .params =
+                {
+                    {IIR_BIQUARD_HPF, {{60, 0, 0.707f}}},
+                },
         },
 #endif
 

@@ -227,8 +227,8 @@ Replaced 2-state on/off toggle with a 3-state cycle: normal → breathing → pa
 
 | Mode | EQ | Compexp | Purpose |
 |------|-----|---------|---------|
-| **Normal** | Bypassed | ON | Stock voice-optimized processing |
-| **Breathing** | Bandpass 250–2000 Hz + boost 700–1500 Hz | OFF | Breathing-enhanced for ML training |
+| **Normal** | HPF 60Hz (stock voice-optimized) | ON | Standard firmware behavior |
+| **Breathing** | +8dB peaking at 1.5kHz Q=0.7 | OFF | Boost breathing zone, full bandwidth kept |
 | **Passthrough** | Bypassed | OFF | Raw unfiltered audio (DC filter still active) |
 
 ### Breathing mode filter design rationale
@@ -276,3 +276,72 @@ Research basis (external mic, NOT stethoscope/chest-wall):
 2. Quad-tap → cycles: normal → breathing → passthrough → normal
 3. Each mode should announce its name ("normal", "breathing", "passthrough")
 4. Record in each mode, compare spectra in Audacity
+
+### Breathing mode filter iterations
+
+**v1: Bandpass 250–2000 Hz + boost 700–1500 Hz**
+- HPF 250Hz, 2x LPF 2000Hz, peaking +6dB at 1000Hz Q=0.8
+- Result: spectrum looked impoverished vs normal/passthrough. Threw away too much information. For ML training, more data is better — the model should learn frequency weighting, not the firmware.
+
+**v2: Dual boost (800 Hz + 1500 Hz)**
+- Peaking +8dB at 800Hz Q=0.6, peaking +6dB at 1500Hz Q=0.8
+- Rejected before testing: 800Hz band overlaps with wind noise (dominant below ~800Hz)
+
+**v3: Single boost at 1500 Hz (current)**
+- Peaking +8dB at 1500Hz Q=0.7
+- Full bandwidth preserved, only amplifies breathing peak zone above wind noise
+- Spectrogram shows subtle difference vs normal — visually similar, but 1.5kHz region is hotter
+
+### Normal mode fix
+- Originally had EQ bypassed — was NOT stock behavior
+- Fixed to use stock 60Hz HPF (matches original `bt_sco_chain_cfg_default.c`)
+
+---
+
+## AEC (Acoustic Echo Cancellation) Investigation
+
+### Problem
+PineBuds have poor speaker/mic decoupling — music playing through speakers bleeds heavily into mic recordings. This is a problem for breathing data collection since test subjects listen to music while running.
+
+### Attempt 1: Enable SPEECH_TX_AEC2FLOAT (default config)
+- Set `SPEECH_TX_AEC2FLOAT ?= 1` in target.mk
+- Default config: `af_enabled=false, nlp_enabled=true, ns_enabled=true`
+- **Result: Both speaker and mic completely muted in HFP mode** (A2DP playback still worked)
+- Root cause investigation:
+  - best2300p has `CHIP_HAS_EC_CODEC_REF=1` and `CHIP_HAS_SCO_DMA_SNAPSHOT=1`
+  - This enables hardware codec echo reference path (not SW_SCO_RESAMPLE)
+  - `aec_echo_buf` is properly allocated in `speech_tx_init()` (bt_sco_chain.c:442)
+  - Playback data is copied into echo buf in `voicebtpcm_pcm_audio_more_data()` (voicebtpcmplay.cpp:1809)
+  - Reference signal path IS wired correctly
+  - **Likely cause: `af_enabled=false` means no adaptive filter to estimate echo. NLP with no echo estimate aggressively suppresses everything → silence.**
+
+### Attempt 2: Enable adaptive filter, disable internal NS
+- `af_enabled=true` — adaptive filter tracks the echo (required for AEC to work)
+- `hpf_enabled=true` — DC removal for reference signal alignment
+- `ns_enabled=false` — removed extra noise suppression inside AEC (was adding unnecessary signal damage)
+- `nlp_enabled=true, blocks=1, delay=70, min_ovrd=2, target_supp=-40`
+- **Result: Headset crashes on A2DP→HFP transition.** AEC with adaptive filter needs more RAM. `open_source` target had `AUDIO_BUFFER_SIZE=100KB`, while `best2300p_ibrt` (which ships with AEC2FLOAT=1) uses 140KB.
+
+### Attempt 3: Increase audio buffer to 140KB
+- Same AEC config as attempt 2
+- `AUDIO_BUFFER_SIZE` bumped from `100*1024` to `140*1024` in target.mk
+- **Result: Still crashes on A2DP→HFP transition.** Buffer size was not the issue — reverted to 100KB.
+
+### Attempt 4: Enable AUDIO_RESAMPLE (current, under test)
+- Compared `open_source/target.mk` vs `best2300p_ibrt/target.mk` (which has AEC2FLOAT=1 working)
+- Key difference: `AUDIO_RESAMPLE=0` in open_source vs `AUDIO_RESAMPLE=1` in best2300p_ibrt
+- `AUDIO_RESAMPLE` enables `__AUDIO_RESAMPLE__` which affects the entire SCO stream setup and AEC echo buffer queue management path in voicebtpcmplay.cpp
+- Set `AUDIO_RESAMPLE ?= 1` in target.mk, kept buffer at 100KB
+- **Result: Still crashes.** The crash is not about resampling — headset dies shortly after HFP connects regardless of A2DP state.
+
+### Attempt 5: Add codec ref channel to hardware input path (current, under test)
+- Diffed `open_source/tgt_hardware.c` vs `best2300p_ibrt/tgt_hardware.c`
+- **Root cause found:** `best2300p_ibrt` has a `#if defined(SPEECH_TX_AEC_CODEC_REF)` block in `cfg_audio_input_path_cfg[]` that adds the DAC loopback channel (`AUD_CHANNEL_MAP_CH4`) to the capture path. `open_source` was missing this entirely.
+- With `SPEECH_TX_AEC_CODEC_REF=1` (auto-enabled by AEC2FLOAT on best2300p), the SCO capture stream opens with `channel_num + 1` channels. But the hardware config only provided 1 mic channel → channel count mismatch → crash.
+- Added the same `SPEECH_TX_AEC_CODEC_REF` guard to `open_source/tgt_hardware.c`
+- Also kept `AUDIO_RESAMPLE=1` and `AUDIO_BUFFER_SIZE=100KB` (matching best2300p_ibrt)
+- **Result: A2DP works, headset survives longer, but still crashes when HFP activates.** Codec ref channel is now properly configured (no more immediate crash), but likely running out of speech heap memory — `ec2float_create` + `eq_init` + buffers exceed what's left in the audio mempool.
+
+### Attempt 6: Increase audio buffer to 140KB with codec ref fix (current, under test)
+- Same as attempt 5 but `AUDIO_BUFFER_SIZE` bumped to `140*1024`
+- `best2300p_ibrt` uses 100KB without SPEECH_TX_EQ. We need extra headroom because both AEC2FLOAT and SPEECH_TX_EQ are active, each allocating from the same speech heap.
